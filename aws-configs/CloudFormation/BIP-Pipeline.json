@@ -1,0 +1,1445 @@
+/**
+ * Guardant Health
+ *
+ * BIP Pipeline application
+ *
+ * CloudFormation Docs: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
+ *              Ref Docs: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-ref.html
+ *
+ */
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates a base VPC for the application",
+    /**
+     * Input parameters.  We can use this to fill in the subnets, ssh keys, environments, and other params when we want to
+     * automate creating VPCs more.
+     */
+    "Parameters": {
+        "InstanceType": {
+            "Description": "WebServer EC2 instance type",
+            "Type": "String",
+            "Default": "m1.small",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "cc1.4xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "255",
+            "AllowedPattern": "[\\x20-\\x7E]*",
+            "Default": "gkan",
+            "ConstraintDescription": "can contain only ASCII characters."
+        },
+        "SSHLocation": {
+            "Description": " The IP address range that can be used to SSH to the EC2 instances",
+            "Type": "String",
+            "MinLength": "9",
+            "MaxLength": "18",
+            "Default": "0.0.0.0/0",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        },
+        "AWSRegion": {
+            "Description": "Available AWS Regions",
+            "Type": "String",
+            "Default": "us-west-2",
+            "AllowedValues": [
+                "us-east-1",
+                "us-west-1",
+                "us-west-2",
+                "sa-east-1",
+                "ap-southeast-1",
+                "ap-southeast-1",
+                "ap-northeast-1",
+                "eu-west-1"
+            ],
+            "ConstraintDescription": "must be a valid AWS region."
+        },
+        "AppEnvironmentName": {
+            "Description": "Environment name",
+            "Type": "String",
+            "Default": "development",
+            "AllowedValues": [
+                "development",
+                "staging",
+                "production",
+                "qa"
+            ],
+            "ConstraintDescription": "Must be a valid environment name."
+        },
+        /**
+         * Network IP space to assign this VPC to.
+         */
+        "VPCNetwork": {
+            "Description": "Network portion of the VPC /16",
+            "Type": "String",
+            "Default": "10.11",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})",
+            "ConstraintDescription": "Must be a valid network address for a /16. Example: 10.11"
+        },
+        /**
+         * RDS Input parameters
+         *
+         */
+        "DBName": {
+            "Default": "kicktag_staging",
+            "Description" : "The database name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern" : ".*",
+            "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+        },
+
+        "DBUsername": {
+            "Default": "kicktag",
+            "Description" : "The database admin account username",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "16",
+            "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+        },
+
+        "DBPassword": {
+            "Default": "123password123",
+            "Description" : "The database admin account password",
+            "Type": "String",
+            "MinLength": "8",
+            "MaxLength": "41",
+            "AllowedPattern" : "[a-zA-Z0-9]*",
+            "ConstraintDescription" : "must contain only alphanumeric characters."
+        },
+        "DBPort": {
+            "Default": " 5432",
+            "Description" : "The database tcp port",
+            "Type": "String",
+            "MinLength": "4",
+            "MaxLength": "6",
+            "AllowedPattern" : "[0-9]*",
+            "ConstraintDescription" : "must contain only numeric characters."
+        },
+
+        "DBClass" : {
+            "Default" : "db.m1.small",
+            "Description" : "Database instance class",
+            "Type" : "String",
+            "AllowedValues" : [ "db.m1.small", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge" ],
+            "ConstraintDescription" : "must select a valid database instance type."
+        },
+        "DBVersion" : {
+            "Default" : "9.3.3",
+            "Description" : "Database version of Postgres.",
+            "Type" : "String",
+            "AllowedValues" : [ "9.3.3", "9.3.2", "9.3.1" ],
+            "ConstraintDescription" : "must select a valid database version."
+        },
+
+        "DBAllocatedStorage" : {
+            "Default": "400",
+            "Description" : "The size of the database (Gb)",
+            "Type": "Number",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription" : "must be between 5 and 1024Gb."
+        },
+        "DBSubnetID1" : {
+            "Default": "subnet-",
+            "Description" : "VPC subnets where the DB will be placed.  Should be in the Database Subnets.",
+            "Type": "String"
+        },
+        "DBSubnetID2" : {
+            "Default": "subnet-",
+            "Description" : "VPC subnets where the DB will be placed.  Should be in the Database Subnets.",
+            "Type": "String"
+        },
+        "ConditionCreateReadReplica" : {
+            "Default" : "false",
+            "Description" : "Create a read replica of the db or not",
+            "Type" : "String",
+            "AllowedValues" : [ "true", "false" ],
+            "ConstraintDescription" : "Must either select true|false."
+        }
+    },
+    "Mappings": {
+        /**
+         * Subnet information configs.  This subnet information should not have to change.  Should only change
+         * the "VPCNetwork" variable which is joined with these subnets.
+         */
+        "SubnetConfig" : {
+            "NetworkVPC"     :  { "CIDR" : ".0.0/16" },
+            "SubnetPublic1a"  : { "CIDR" : ".11.0/24" },
+            "SubnetPublic1b"  : { "CIDR" : ".12.0/24" },
+            "SubnetPublic1c"  : { "CIDR" : ".13.0/24" },
+            "SubnetPublic1d"  : { "CIDR" : ".14.0/24" },
+            "SubnetDirector1a" : { "CIDR" : ".21.0/24" },
+            "SubnetDirector1b" : { "CIDR" : ".22.0/24" },
+            "SubnetDirector1c" : { "CIDR" : ".23.0/24" },
+            "SubnetDirector1d" : { "CIDR" : ".24.0/24" },
+            "SubnetWorker1a" : { "CIDR" : ".31.0/24" },
+            "SubnetWorker1b" : { "CIDR" : ".32.0/24" },
+            "SubnetWorker1c" : { "CIDR" : ".33.0/24" },
+            "SubnetWorker1d" : { "CIDR" : ".34.0/24" },
+            "SubnetDatabase1a" : { "CIDR" : ".41.0/24" },
+            "SubnetDatabase1b" : { "CIDR" : ".42.0/24" },
+            "SubnetDatabase1c" : { "CIDR" : ".43.0/24" },
+            "SubnetDatabase1d" : { "CIDR" : ".44.0/24" }
+        },
+        /**
+         * These are generic AWS AMIs: amzn-ami-2011.09.1.i386-ebs
+         */
+        "AMIMappingGenericInstance": {
+            "us-east-1": {
+                "AMI": "ami-fd20ad94"
+            },
+            "us-west-1": {
+                "AMI": "ami-951945d0"
+            },
+            "us-west-2": {
+                "AMI": "ami-78e76f48"
+            },
+            "eu-west-1": {
+                "AMI": "ami-24506250"
+            },
+            "sa-east-1": {
+                "AMI": "ami-3e3be423"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-74dda626"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-b3990e89"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-dcfa4edd"
+            }
+        },
+        /**
+         * NAT AMI Instance: amzn-ami-vpc-nat-pv-2013.09.0.x86_64-ebs
+         */
+        "AMIMappingNATInstance": {
+            "us-east-1": {
+                "AMI": "ami-ad227cc4"
+            },
+            "us-west-2": {
+                "AMI": "ami-f032acc0"
+            }
+        },
+        /**
+         * AWS SSH Keys
+         */
+        "AWSSSHKeys": {
+            "default": {
+                "key": "gkan"
+            }
+        }
+    },
+    //////////////////////////////////////////////////////////////////////////////
+    //
+    // Conditions
+    //
+    //////////////////////////////////////////////////////////////////////////////
+    "Conditions" : {
+        "ConditionDoCreateReadReplica" : {"Fn::Equals" : [{"Ref" : "ConditionCreateReadReplica"}, "true"] }
+    },
+    //////////////////////////////////////////////////////////////////////////////
+    //
+    // VPC Resources
+    //
+    //////////////////////////////////////////////////////////////////////////////
+    "Resources": {
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // General VPC Definitions
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "NetworkVPC", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "AppEnvironmentName",
+                        "Value": {
+                            "Ref": "AppEnvironmentName"
+                        }
+                    }
+                ]
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    }
+                ]
+            }
+        },
+        "AttachGateway": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Route Tables
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * Route table for the public subnets.
+         */
+        "RouteTablePublic": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Public"
+                    }
+                ]
+            }
+        },
+        /**
+         * Route table for the private subnets
+         */
+        "RouteTablePrivate": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "Network",
+                        "Value": "Private"
+                    }
+                ]
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Network ACLs
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        "NetworkAcl": {
+            "Type": "AWS::EC2::NetworkAcl",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    }
+                ]
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Route Definitions
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * Route for the public subnets to get to the Internet Gateway (IGW)
+         */
+        "RoutePublic": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "AttachGateway",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTablePublic"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        /**
+         * Route for the private subnets to reach the NAT box
+         */
+        "RoutePrivateNAT": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "AttachGateway",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "InstanceId" : { "Ref" : "EC2InstanceNAT1a" }
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Network ACLs Definitions
+        //
+        // Allowing all inbound and outbound connections
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * TCP ACL - Allow All
+         */
+        "InboundResponsePortsNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                },
+                "RuleNumber": "102",
+                "Protocol": "-1",
+                "RuleAction": "allow",
+                "Egress": "false",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "1",
+                    "To": "65535"
+                },
+                "Icmp" : { "Code" : "-1", "Type" : "-1" }
+            }
+        },
+        "OutBoundResponsePortsNetworkAclEntry": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                },
+                "RuleNumber": "102",
+                "Protocol": "-1",
+                "RuleAction": "allow",
+                "Egress": "true",
+                "CidrBlock": "0.0.0.0/0",
+                "PortRange": {
+                    "From": "1",
+                    "To": "65535"
+                },
+                "Icmp" : { "Code" : "-1", "Type" : "-1" }
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Security Group Definitions
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * Generic security group.  This is basically just for testing
+         */
+        "SecurityGroupDefaultGeneric": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupDescription": "Default Generic SG",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "SSHLocation"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        /**
+         * NAT Security group.  Has to let a wide range of ports inbound
+         */
+        "SecurityGroupNAT": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupDescription": "NAT SG",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "1",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Subnet Section - Public
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * Subnet - Public 1a
+         */
+        "SubnetPublic1a": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                /**
+                 * Concating the Network portion with individual subnet section
+                 */
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1a", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "elb nat"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPublic1a": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1a"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePublic"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetPublic1a": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1a"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        /**
+         * Subnet - Public 1b
+         */
+        /*
+        "SubnetPublic1b": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "b" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                */
+                /**
+                 * Concating the Network portion with individual subnet section
+                 */
+                    /*
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1b", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "elb nat"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPublic1b": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1b"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePublic"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetPublic1b": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1b"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        */
+        /**
+         * Subnet - Public 1c
+         */
+        "SubnetPublic1c": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                /**
+                 * The "a" is the zone: a | b | c | d
+                 */
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "c" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                /**
+                 * Concating the Network portion with individual subnet section
+                 */
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1c", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "elb nat"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPublic1c": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1c"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePublic"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetPublic1c": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1c"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        /**
+         * Subnet - Public 1d
+         *
+         * This zone is not available in us-west-2
+         */
+        /**
+         "SubnetPublic1d": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+            */
+        /**
+         * The "a" is the zone: a | b | c | d
+         */
+        /*
+         "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "d" ] ] },
+         "VpcId": {
+         "Ref": "VPC"
+         },
+         */
+        /**
+         * Concating the Network portion with individual subnet section
+         */
+        /**
+         "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1d", "CIDR" ]}] ] },
+         "Tags": [
+         {
+             "Key": "Application",
+             "Value": {
+                 "Ref": "AWS::StackId"
+             }
+         },
+         {
+             "Key": "functionality",
+             "Value": "elb nat"
+         }
+         ]
+         }
+         },
+         "SubnetRouteTableAssociationSubnetPublic1d": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1d"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePublic"
+                }
+            }
+        },
+         "SubnetNetworkAclAssociationSubnetPublic1d": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublic1d"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+         */
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Subnet Section - Workers
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * Subnet - SubnetWorker 1a
+         */
+        "SubnetWorker1a": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1a", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Worker Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetWorker1a": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1a"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetWorker1a": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1a"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        /**
+         * Subnet - SubnetWorker 1b
+         */
+            /*
+        "SubnetWorker1b": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "b" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1b", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Worker Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetWorker1b": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1b"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetWorker1b": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1b"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        */
+        /**
+         * Subnet - SubnetWorker 1c
+         */
+        "SubnetWorker1c": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "c" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1c", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Worker Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetWorker1c": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1c"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetWorker1c": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1c"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        /**
+         * Subnet - SubnetWorker 1d
+         */
+        /**
+         "SubnetWorker1d": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "d" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1d", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Worker Layer"
+                    }
+                ]
+            }
+        },
+         "SubnetRouteTableAssociationSubnetWorker1d": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1d"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+         "SubnetNetworkAclAssociationSubnetWorker1d": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorker1d"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+         */
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // Subnet Section - Databases
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * Subnet - SubnetDatabase 1a
+         */
+        "SubnetDatabase1a": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1a", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Database Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetDatabase1a": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1a"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetDatabase1a": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1a"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        /**
+         * Subnet - SubnetDatabase 1b
+         */
+            /*
+        "SubnetDatabase1b": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "b" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1b", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Database Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetDatabase1b": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1b"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetDatabase1b": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1b"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        */
+        /**
+         * Subnet - SubnetDatabase 1c
+         */
+        "SubnetDatabase1c": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "c" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1c", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Database Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetDatabase1c": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1c"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetDatabase1c": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1c"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        /**
+         * Subnet - SubnetDatabase 1d
+         */
+        /**
+         "SubnetDatabase1d": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1d", "CIDR" ]}] ] },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Database Layer"
+                    }
+                ]
+            }
+        },
+         "SubnetRouteTableAssociationSubnetDatabase1d": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1d"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+         "SubnetNetworkAclAssociationSubnetDatabase1d": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabase1d"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+         */
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // RDS Section
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        "DBSubnetGroupMainDB" : {
+            "Type" : "AWS::RDS::DBSubnetGroup",
+            "Properties" : {
+                "DBSubnetGroupDescription" : "Subnets available for the RDS DB Instance",
+                "SubnetIds" : [ {"Ref":"SubnetDatabase1a"}, {"Ref":"SubnetDatabase1c"} ],
+                "Tags" : [ {"Key" : "Functionality", "Value" : "VPC Subnet Group"}]
+            }
+        },
+        "DBSecurityGroupMainDB" : {
+            "Type" : "AWS::RDS::DBSecurityGroup",
+            "Properties" : {
+                "EC2VpcId":{ "Ref" : "VPC" },
+                "GroupDescription" : "Ingress for main RDS DB.  Allowing all for now, but this should be changed.",
+                "DBSecurityGroupIngress" : [
+                    {"CIDRIP":"0.0.0.0/0"}
+                ],
+                "Tags" : [ {"Key" : "Functionality", "Value" : "Main DB RDS Security Group"}]
+            }
+        },
+
+        "DBInstanceMainDB" : {
+            "Type" : "AWS::RDS::DBInstance",
+            "Properties" : {
+                "DBName" : { "Ref" : "DBName" },
+                "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
+                "DBInstanceClass" : { "Ref" : "DBClass" },
+                "Engine" : "PostgreSQL",
+                "EngineVersion" : {"Ref": "DBVersion"},
+                "MasterUsername" : { "Ref" : "DBUsername" } ,
+                "MasterUserPassword" : { "Ref" : "DBPassword" },
+                "Port" : {"Ref":"DBPort"},
+                "DBSubnetGroupName" : {"Ref":"DBSubnetGroupMainDB"},
+                "DBSecurityGroups" : [ { "Ref" : "DBSecurityGroupMainDB" }  ],
+                "Tags" : [{"Key" : "Role", "Value" : "Primary"}, {"Key" : "Functionality", "Value" : "Main DB"}, {"Key" : "environmentName", "Value" : {"Ref":"AppEnvironmentName"} } ]
+            }
+        },
+        "DBInstanceMainDBReplica1" : {
+            "Type": "AWS::RDS::DBInstance",
+            "Condition" : "ConditionDoCreateReadReplica",
+            "Properties": {
+                "SourceDBInstanceIdentifier": { "Ref" : "DBInstanceMainDB" },
+                "Port" : {"Ref":"DBPort"},
+                "Tags" : [{"Key" : "Role", "Value" : "ReadRep"}, {"Key" : "Functionality", "Value" : "Main DB"}]
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // EC2 Section
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        /**
+         * EC2 Jumpbox host: 1a
+         */
+            /*
+        "EC2InstanceJumpbox1a" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AMIMappingGenericInstance",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
+                },
+                "InstanceType": "m1.small",
+                "KeyName": { "Fn::FindInMap" : [ "AWSSSHKeys", "default", "key" ]},
+                "SubnetId": {
+                    "Ref": "SubnetPublic1a"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "SecurityGroupNAT"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key" : "Functionality",
+                        "Value": "Jump box"
+                    },
+                    { "Key": "CreatedFrom", "Value": "CloudFormation"}
+                ],
+                "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+                    "#!/bin/bash -v\n",
+                    "# Send something out of the network interface.\n",
+                    "# Have notice a layer 2 like problem.\n",
+                    "ping -c 4 google.com\n"
+                ]]}}
+            }
+        },
+        "IPAddressJumpBox": {
+            "Type": "AWS::EC2::EIP",
+            "DependsOn": "AttachGateway",
+            "Properties": {
+                "Domain": "vpc",
+                "InstanceId": {
+                    "Ref": "EC2InstanceJumpbox1a"
+                }
+            }
+        },
+        */
+        /**
+         * NAT Instance - 1a
+         */
+        "EC2InstanceNAT1a" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AMIMappingNATInstance",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
+                },
+                "InstanceType": {"Ref":"InstanceType"},
+                "KeyName": { "Fn::FindInMap" : [ "AWSSSHKeys", "default", "key" ]},
+                "SubnetId": {
+                    "Ref": "SubnetPublic1a"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "SecurityGroupNAT"
+                    }
+                ],
+                /**
+                 *  Need to set SourceDestCheck to false for NAT Boxes or it wont forward traffic
+                 */
+                "SourceDestCheck" : "false",
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key" : "Functionality",
+                        "Value": "NAT Box in subnet 1a"
+                    },
+                    { "Key": "CreatedFrom", "Value": "CloudFormation"}
+                ]
+            }
+        },
+        "IPAddressNAT1a": {
+            "Type": "AWS::EC2::EIP",
+            "DependsOn": "AttachGateway",
+            "Properties": {
+                "Domain": "vpc",
+                "InstanceId": {
+                    "Ref": "EC2InstanceNAT1a"
+                }
+            }
+        },
+        //////////////////////////////////////////////////////////////////////////////
+        //
+        // ASG - BIP Pipeline
+        //
+        //////////////////////////////////////////////////////////////////////////////
+        "LaunchConfigBIPPipeline" : {
+            "Type" : "AWS::AutoScaling::LaunchConfiguration",
+            "Properties" : {
+                "KeyName" : { "Fn::FindInMap" : [ "AWSSSHKeys", "default", "key" ]},
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AMIMappingGenericInstance",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
+                },
+                "SecurityGroups" : [ { "Ref" : "SecurityGroupDefaultGeneric" } ],
+                "InstanceType" : {"Ref":"InstanceType"},
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["",[
+                    "#!/bin/bash -ex","\n",
+                    "apt-get install -y update","\n",
+                    // Install chef/solo client
+                    "curl -L https://www.opscode.com/chef/install.sh | sudo bash","\n",
+                    // Get chef repository
+                    "git clone https://github.com/sekka1/temp-gh.git /tmp/temp-gh","\n",
+                    // Run chef solo to provision itself.  The dna.json file will hold the run-list.
+                    "chef-solo -c /tmp/vagrant-chef-3/solo.rb -j /tmp/vagrant-chef-3/dna.json","\n",
+                    // http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-waitcondition-article.html
+                    "curl -X PUT -H 'Content-Type:' --data-binary '{\"Status\" : \"SUCCESS\",",
+                    "\"Reason\" : \"The application myapp is ready\",",
+                    "\"UniqueId\" : \"myapp\",",
+                    "\"Data\" : \"Done\"}' ",
+                    "\"", {"Ref" : "WaitForInstanceWaitHandle"},"\"\n"
+                    ]
+                ]}
+                }
+            }
+        },
+
+        "WaitForInstanceWaitHandle" : {
+            "Type" : "AWS::CloudFormation::WaitConditionHandle",
+            "Properties" : {
+            }
+        },
+        "WaitForInstance" : {
+            "Type" : "AWS::CloudFormation::WaitCondition",
+            "DependsOn" : "LaunchConfigBIPPipeline",
+            "Properties" : {
+                "Handle" : {"Ref" : "WaitForInstanceWaitHandle"},
+                "Timeout" : "600"
+            }
+        },
+        "AutoScalingGroupBIPPipeline" : {
+            "Type" : "AWS::AutoScaling::AutoScalingGroup",
+            "Properties" : {
+                //"AvailabilityZones" : { "Fn::GetAZs" : { "Ref" : "AWSRegion" } },
+                "AvailabilityZones" : [ "us-west-2a", "us-west-2b", "us-west-2c" ],
+                "LaunchConfigurationName" : { "Ref" : "LaunchConfigBIPPipeline" },
+                "MinSize" : "1",
+                "MaxSize" : "1",
+                "VPCZoneIdentifier" : [ { "Ref" : "SubnetWorker1a" } ],
+                "Tags" : [
+                    { "Key" : "Network", "Value" : "Private", "PropagateAtLaunch" : "true" },
+                    { "Key" : "EnvironmentName", "Value" : {"Ref": "AppEnvironmentName"}, "PropagateAtLaunch" : "true" }
+                ]
+            }
+        },
+        "ScalingPolicyUpBIPPipeline" : {
+            "Type" : "AWS::AutoScaling::ScalingPolicy",
+            "Properties" : {
+                "AdjustmentType" : "ChangeInCapacity",
+                "AutoScalingGroupName" : { "Ref" : "AutoScalingGroupBIPPipeline" },
+                "Cooldown" : "60",
+                "ScalingAdjustment" : "1"
+            }
+        },
+        "ScalingPolicyDownBIPPipeline" : {
+            "Type" : "AWS::AutoScaling::ScalingPolicy",
+            "Properties" : {
+                "AdjustmentType" : "ChangeInCapacity",
+                "AutoScalingGroupName" : { "Ref" : "AutoScalingGroupBIPPipeline" },
+                "Cooldown" : "60",
+                "ScalingAdjustment" : "-1"
+            }
+        },
+        "CPUAlarmHighBIPPipeline": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-up if CPU > 90% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "90",
+                "AlarmActions": [ { "Ref": "ScalingPolicyUpBIPPipeline" } ],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": { "Ref": "AutoScalingGroupBIPPipeline" }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "CPUAlarmLowBIPPipeline": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-down if CPU < 70% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "70",
+                "AlarmActions": [ { "Ref": "ScalingPolicyDownBIPPipeline" } ],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": { "Ref": "AutoScalingGroupBIPPipeline" }
+                    }
+                ],
+                "ComparisonOperator": "LessThanThreshold"
+            }
+        }
+    },
+    "Outputs": {
+        "VPC":{
+            "Description": "VPC ID",
+            "Value" :  { "Ref": "VPC" }
+        },
+        "NatBox": {
+            "Description": "Nat servers",
+            "Value" :  { "Fn::GetAtt" : [ "EC2InstanceNAT1a", "PublicIp" ]}
+        }
+    }
+}
