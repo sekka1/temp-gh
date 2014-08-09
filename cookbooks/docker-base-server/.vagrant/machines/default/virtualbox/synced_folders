@@ -1,0 +1,1 @@
+{"virtualbox":{"/vagrant":{"guestpath":"/vagrant","hostpath":"/Users/gkan/WebstormProjects/chef-guardant-health/cookbooks/docker-base-server","disabled":false},"v-csc-1":{"id":"v-csc-1","guestpath":"/tmp/vagrant-chef-3/chef-solo-1/cookbooks","hostpath":"/Users/gkan/WebstormProjects/chef-guardant-health/cookbooks","disabled":false}}}
