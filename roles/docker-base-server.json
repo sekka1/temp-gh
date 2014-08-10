@@ -1,5 +1,5 @@
 {
-    "name": "docker-server",
+    "name": "docker-base-server",
     "default_attributes": {},
     "override_attributes": {},
     "json_class": "Chef::Role",

@@ -100,7 +100,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   #
   config.vm.provision :chef_solo do |chef|
     chef.cookbooks_path = "../"
-    chef.roles_path = "../roles/docker-base-server.json"
+    chef.roles_path = "../../roles/"
     #   chef.data_bags_path = "../my-recipes/data_bags"
     chef.add_role "docker-base-server"
 
