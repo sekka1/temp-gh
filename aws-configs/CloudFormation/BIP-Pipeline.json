@@ -1331,8 +1331,16 @@
                     "curl -L https://www.opscode.com/chef/install.sh | sudo bash","\n",
                     // Get chef repository
                     "git clone https://github.com/sekka1/temp-gh.git /tmp/temp-gh","\n",
-                    // Run chef solo to provision itself.  The dna.json file will hold the run-list.
-                    "chef-solo -c /tmp/vagrant-chef-3/solo.rb -j /tmp/vagrant-chef-3/dna.json","\n",
+                    // Run chef solo to provision itself.  The docker-base-server.json file will hold the run-list.
+                    "chef-solo -c /tmp/temp-gh/aws-configs/chef-solo/solo.rb -j /tmp/temp-gh/roles/docker-base-server.json","\n",
+
+                    // Pull garland/aws-rest-api-server docker image and run it
+                    "docker pull garland/aws-rest-api-server","\n",
+                    "docker run -p 8080:8080 garland/aws-rest-api-server","\n",
+
+                    // Pull BIP container here and run it
+
+
                     // http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-waitcondition-article.html
                     "curl -X PUT -H 'Content-Type:' --data-binary '{\"Status\" : \"SUCCESS\",",
                     "\"Reason\" : \"The application myapp is ready\",",
