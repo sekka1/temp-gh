@@ -1332,7 +1332,7 @@
                     // Get chef repository
                     "git clone https://github.com/sekka1/temp-gh.git /tmp/temp-gh","\n",
                     // Run chef solo to provision itself.  The docker-base-server.json file will hold the run-list.
-                    "chef-solo -c /tmp/temp-gh/aws-configs/chef-solo/solo.rb -j /tmp/temp-gh/roles/docker-base-server.json","\n",
+                    "chef-solo -c /tmp/temp-gh/aws-configs/chef-solo/solo.rb -j /tmp/temp-gh/solo-run_lists/docker-base-server.json","\n",
 
                     // Pull garland/aws-rest-api-server docker image and run it
                     "docker pull garland/aws-rest-api-server","\n",
