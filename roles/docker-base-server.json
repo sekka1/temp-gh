@@ -1,4 +1,10 @@
 {
+    "name": "docker-server",
+    "default_attributes": {},
+    "override_attributes": {},
+    "json_class": "Chef::Role",
+    "description": "Docker server",
+    "chef_type": "role",
     "run_list": [
         "recipe[docker::aufs]",
         "recipe[docker::lxc]",
