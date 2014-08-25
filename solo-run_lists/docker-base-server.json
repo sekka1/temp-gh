@@ -1,7 +1,0 @@
-{
-    "run_list": [
-        "recipe[docker::aufs]",
-        "recipe[docker::lxc]",
-        "recipe[docker]"
-    ]
-}
