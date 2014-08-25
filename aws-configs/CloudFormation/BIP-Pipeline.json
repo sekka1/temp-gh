@@ -99,7 +99,7 @@
          *
          */
         "DBName": {
-            "Default": "kicktag_staging",
+            "Default": "my_db",
             "Description" : "The database name",
             "Type": "String",
             "MinLength": "1",
@@ -109,7 +109,7 @@
         },
 
         "DBUsername": {
-            "Default": "kicktag",
+            "Default": "myuser",
             "Description" : "The database admin account username",
             "Type": "String",
             "MinLength": "1",
@@ -136,7 +136,6 @@
             "AllowedPattern" : "[0-9]*",
             "ConstraintDescription" : "must contain only numeric characters."
         },
-
         "DBClass" : {
             "Default" : "db.m1.small",
             "Description" : "Database instance class",
@@ -160,22 +159,57 @@
             "MaxValue": "1024",
             "ConstraintDescription" : "must be between 5 and 1024Gb."
         },
-        "DBSubnetID1" : {
-            "Default": "subnet-",
-            "Description" : "VPC subnets where the DB will be placed.  Should be in the Database Subnets.",
-            "Type": "String"
-        },
-        "DBSubnetID2" : {
-            "Default": "subnet-",
-            "Description" : "VPC subnets where the DB will be placed.  Should be in the Database Subnets.",
-            "Type": "String"
-        },
         "ConditionCreateReadReplica" : {
             "Default" : "false",
             "Description" : "Create a read replica of the db or not",
             "Type" : "String",
             "AllowedValues" : [ "true", "false" ],
             "ConstraintDescription" : "Must either select true|false."
+        },
+        //////////////////////////////////////////////////
+        //
+        // Availability zones to use.  Amazon does not provide a list of currently active AZs
+        // Hardcoding AZs might error out if that zone is currently unavailable.
+        //
+        /////////////////////////////////////////////////
+        "AvailabilityZone1": {
+            "Description": "Availability zone id: a, b, c, d, etc",
+            "Type": "String",
+            "Default": "a",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ],
+            "ConstraintDescription": "must be a availability zone."
+        },
+        "AvailabilityZone2": {
+            "Description": "Availability zone id: a, b, c, d, etc",
+            "Type": "String",
+            "Default": "b",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ],
+            "ConstraintDescription": "must be a availability zone."
+        },
+        "AvailabilityZone3": {
+            "Description": "Availability zone id: a, b, c, d, etc",
+            "Type": "String",
+            "Default": "c",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ],
+            "ConstraintDescription": "must be a availability zone."
         }
     },
     "Mappings": {
@@ -185,27 +219,27 @@
          */
         "SubnetConfig" : {
             "NetworkVPC"     :  { "CIDR" : ".0.0/16" },
-            "SubnetPublic1a"  : { "CIDR" : ".11.0/24" },
-            "SubnetPublic1b"  : { "CIDR" : ".12.0/24" },
-            "SubnetPublic1c"  : { "CIDR" : ".13.0/24" },
+            "SubnetPublicNet1"  : { "CIDR" : ".11.0/24" },
+            "SubnetPublicNet2"  : { "CIDR" : ".12.0/24" },
+            "SubnetPublicNet3"  : { "CIDR" : ".13.0/24" },
             "SubnetPublic1d"  : { "CIDR" : ".14.0/24" },
             "SubnetDirector1a" : { "CIDR" : ".21.0/24" },
             "SubnetDirector1b" : { "CIDR" : ".22.0/24" },
             "SubnetDirector1c" : { "CIDR" : ".23.0/24" },
             "SubnetDirector1d" : { "CIDR" : ".24.0/24" },
-            "SubnetWorker1a" : { "CIDR" : ".31.0/24" },
-            "SubnetWorker1b" : { "CIDR" : ".32.0/24" },
-            "SubnetWorker1c" : { "CIDR" : ".33.0/24" },
+            "SubnetWorkerNet1" : { "CIDR" : ".31.0/24" },
+            "SubnetWorkerNet2" : { "CIDR" : ".32.0/24" },
+            "SubnetWorkerNet3" : { "CIDR" : ".33.0/24" },
             "SubnetWorker1d" : { "CIDR" : ".34.0/24" },
-            "SubnetDatabase1a" : { "CIDR" : ".41.0/24" },
-            "SubnetDatabase1b" : { "CIDR" : ".42.0/24" },
-            "SubnetDatabase1c" : { "CIDR" : ".43.0/24" },
+            "SubnetDatabaseNet1" : { "CIDR" : ".41.0/24" },
+            "SubnetDatabaseNet2" : { "CIDR" : ".42.0/24" },
+            "SubnetDatabaseNet3" : { "CIDR" : ".43.0/24" },
             "SubnetDatabase1d" : { "CIDR" : ".44.0/24" }
         },
         /**
          * These are generic AWS AMIs: amzn-ami-2011.09.1.i386-ebs
          */
-        "AMIMappingGenericInstance": {
+        "AMIMappingUbuntu1204": {
             "us-east-1": {
                 "AMI": "ami-fd20ad94"
             },
@@ -232,6 +266,70 @@
             }
         },
         /**
+         * AWS AMI: Ubuntu 14.04
+         *
+         * Image from Amazon Market place - https://aws.amazon.com/marketplace/pp/B00JV9JBDS
+         *
+         * No hourly cost but you have to goto the link and accept the terms b/c it is in the market place
+         */
+        "AMIMappingUbuntu1404MarketPlace": {
+            "us-east-1": {
+                "AMI": "ami-30519058"
+            },
+            "us-west-1": {
+                "AMI": "ami-957070d0"
+            },
+            "us-west-2": {
+                "AMI": "ami-5b58266b"
+            },
+            "eu-west-1": {
+                "AMI": "ami-3986524e"
+            },
+            "sa-east-1": {
+                "AMI": "ami-1189270c"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-dad68888"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-eb6d0ad1"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-cb4610ca"
+            }
+        },
+        /**
+         * AWS AMI: Ubuntu 14.04
+         *
+         * Image from the community AMIs
+         */
+        "AMIMappingUbuntu1404Community": {
+            "us-east-1": {
+                "AMI": "ami-e84d8480"
+            },
+            "us-west-1": {
+                "AMI": "ami-f1fdfeb4"
+            },
+            "us-west-2": {
+                "AMI": "ami-8bb8c0bb"
+            },
+            "eu-west-1": {
+                "AMI": "ami-"
+            },
+            "sa-east-1": {
+                "AMI": "ami-"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-"
+            }
+        },
+        /**
          * NAT AMI Instance: amzn-ami-vpc-nat-pv-2013.09.0.x86_64-ebs
          */
         "AMIMappingNATInstance": {
@@ -240,14 +338,6 @@
             },
             "us-west-2": {
                 "AMI": "ami-f032acc0"
-            }
-        },
-        /**
-         * AWS SSH Keys
-         */
-        "AWSSSHKeys": {
-            "default": {
-                "key": "gkan"
             }
         }
     },
@@ -526,19 +616,19 @@
         //
         //////////////////////////////////////////////////////////////////////////////
         /**
-         * Subnet - Public 1a
+         * Subnet - PublicNet1
          */
-        "SubnetPublic1a": {
+        "SubnetPublicNet1": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone1"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
                 /**
                  * Concating the Network portion with individual subnet section
                  */
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1a", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublicNet1", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -553,22 +643,22 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetPublic1a": {
+        "SubnetRouteTableAssociationSubnetPublicNet1": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePublic"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetPublic1a": {
+        "SubnetNetworkAclAssociationSubnetPublicNet1": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
@@ -576,22 +666,19 @@
             }
         },
         /**
-         * Subnet - Public 1b
+         * Subnet - PublicNet2
          */
-        /*
-        "SubnetPublic1b": {
+        "SubnetPublicNet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "b" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone2"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                */
                 /**
                  * Concating the Network portion with individual subnet section
                  */
-                    /*
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1b", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublicNet2", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -606,46 +693,45 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetPublic1b": {
+        "SubnetRouteTableAssociationSubnetPublicNet2": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1b"
+                    "Ref": "SubnetPublicNet2"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePublic"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetPublic1b": {
+        "SubnetNetworkAclAssociationSubnetPublicNet2": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1b"
+                    "Ref": "SubnetPublicNet2"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        */
         /**
-         * Subnet - Public 1c
+         * Subnet - PublicNet3
          */
-        "SubnetPublic1c": {
+        "SubnetPublicNet3": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 /**
                  * The "a" is the zone: a | b | c | d
                  */
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "c" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone3"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
                 /**
                  * Concating the Network portion with individual subnet section
                  */
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublic1c", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetPublicNet3", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -660,22 +746,22 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetPublic1c": {
+        "SubnetRouteTableAssociationSubnetPublicNet3": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1c"
+                    "Ref": "SubnetPublicNet3"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePublic"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetPublic1c": {
+        "SubnetNetworkAclAssociationSubnetPublicNet3": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1c"
+                    "Ref": "SubnetPublicNet3"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
@@ -749,16 +835,16 @@
         //
         //////////////////////////////////////////////////////////////////////////////
         /**
-         * Subnet - SubnetWorker 1a
+         * Subnet - SubnetWorkerNet1
          */
-        "SubnetWorker1a": {
+        "SubnetWorkerNet1": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone1"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1a", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorkerNet1", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -773,22 +859,22 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetWorker1a": {
+        "SubnetRouteTableAssociationSubnetWorkerNet1": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1a"
+                    "Ref": "SubnetWorkerNet1"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetWorker1a": {
+        "SubnetNetworkAclAssociationSubnetWorkerNet1": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1a"
+                    "Ref": "SubnetWorkerNet1"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
@@ -796,17 +882,16 @@
             }
         },
         /**
-         * Subnet - SubnetWorker 1b
+         * Subnet - SubnetWorkerNet2
          */
-            /*
-        "SubnetWorker1b": {
+        "SubnetWorkerNet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "b" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone2"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1b", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorkerNet2", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -821,40 +906,39 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetWorker1b": {
+        "SubnetRouteTableAssociationSubnetWorkerNet2": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1b"
+                    "Ref": "SubnetWorkerNet2"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetWorker1b": {
+        "SubnetNetworkAclAssociationSubnetWorkerNet2": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1b"
+                    "Ref": "SubnetWorkerNet2"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        */
         /**
-         * Subnet - SubnetWorker 1c
+         * Subnet - SubnetWorkerNet3
          */
-        "SubnetWorker1c": {
+        "SubnetWorkerNet3": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "c" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone3"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorker1c", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetWorkerNet3", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -869,22 +953,22 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetWorker1c": {
+        "SubnetRouteTableAssociationSubnetWorkerNet3": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1c"
+                    "Ref": "SubnetWorkerNet3"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetWorker1c": {
+        "SubnetNetworkAclAssociationSubnetWorkerNet3": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1c"
+                    "Ref": "SubnetWorkerNet3"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
@@ -946,16 +1030,16 @@
         //
         //////////////////////////////////////////////////////////////////////////////
         /**
-         * Subnet - SubnetDatabase 1a
+         * Subnet - SubnetDatabaseNet1
          */
-        "SubnetDatabase1a": {
+        "SubnetDatabaseNet1": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "a" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone1"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1a", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabaseNet1", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -970,22 +1054,22 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetDatabase1a": {
+        "SubnetRouteTableAssociationSubnetDatabaseNet1": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1a"
+                    "Ref": "SubnetDatabaseNet1"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetDatabase1a": {
+        "SubnetNetworkAclAssociationSubnetDatabaseNet1": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1a"
+                    "Ref": "SubnetDatabaseNet1"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
@@ -993,17 +1077,16 @@
             }
         },
         /**
-         * Subnet - SubnetDatabase 1b
+         * Subnet - SubnetDatabaseNet2
          */
-            /*
-        "SubnetDatabase1b": {
+        "SubnetDatabaseNet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "b" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone2"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1b", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabaseNet2", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -1018,40 +1101,39 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetDatabase1b": {
+        "SubnetRouteTableAssociationSubnetDatabaseNet2": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1b"
+                    "Ref": "SubnetDatabaseNet2"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetDatabase1b": {
+        "SubnetNetworkAclAssociationSubnetDatabaseNet2": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1b"
+                    "Ref": "SubnetDatabaseNet2"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        */
         /**
-         * Subnet - SubnetDatabase 1c
+         * Subnet - SubnetDatabaseNet3
          */
-        "SubnetDatabase1c": {
+        "SubnetDatabaseNet3": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, "c" ] ] },
+                "AvailabilityZone": { "Fn::Join" : [ "", [ { "Ref" : "AWSRegion" }, {"Ref": "AvailabilityZone3"} ] ] },
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabase1c", "CIDR" ]}] ] },
+                "CidrBlock": { "Fn::Join" : [ "", [ { "Ref" : "VPCNetwork" }, { "Fn::FindInMap" : [ "SubnetConfig", "SubnetDatabaseNet3", "CIDR" ]}] ] },
                 "Tags": [
                     {
                         "Key": "Application",
@@ -1066,22 +1148,22 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetDatabase1c": {
+        "SubnetRouteTableAssociationSubnetDatabaseNet3": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1c"
+                    "Ref": "SubnetDatabaseNet3"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetDatabase1c": {
+        "SubnetNetworkAclAssociationSubnetDatabaseNet3": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1c"
+                    "Ref": "SubnetDatabaseNet3"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
@@ -1146,7 +1228,7 @@
             "Type" : "AWS::RDS::DBSubnetGroup",
             "Properties" : {
                 "DBSubnetGroupDescription" : "Subnets available for the RDS DB Instance",
-                "SubnetIds" : [ {"Ref":"SubnetDatabase1a"}, {"Ref":"SubnetDatabase1c"} ],
+                "SubnetIds" : [ {"Ref":"SubnetDatabaseNet1"}, {"Ref":"SubnetDatabaseNet3"} ],
                 "Tags" : [ {"Key" : "Functionality", "Value" : "VPC Subnet Group"}]
             }
         },
@@ -1168,7 +1250,7 @@
                 "DBName" : { "Ref" : "DBName" },
                 "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
                 "DBInstanceClass" : { "Ref" : "DBClass" },
-                "Engine" : "PostgreSQL",
+                "Engine" : "postgres",
                 "EngineVersion" : {"Ref": "DBVersion"},
                 "MasterUsername" : { "Ref" : "DBUsername" } ,
                 "MasterUserPassword" : { "Ref" : "DBPassword" },
@@ -1201,7 +1283,7 @@
             "Properties" : {
                 "ImageId": {
                     "Fn::FindInMap": [
-                        "AMIMappingGenericInstance",
+                        "AMIMappingUbuntu1404",
                         {
                             "Ref": "AWS::Region"
                         },
@@ -1211,7 +1293,7 @@
                 "InstanceType": "m1.small",
                 "KeyName": { "Fn::FindInMap" : [ "AWSSSHKeys", "default", "key" ]},
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "SecurityGroupIds": [
                     {
@@ -1266,9 +1348,9 @@
                     ]
                 },
                 "InstanceType": {"Ref":"InstanceType"},
-                "KeyName": { "Fn::FindInMap" : [ "AWSSSHKeys", "default", "key" ]},
+                "KeyName": { "Ref": "KeyName" },
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "SecurityGroupIds": [
                     {
@@ -1312,10 +1394,10 @@
         "LaunchConfigBIPPipeline" : {
             "Type" : "AWS::AutoScaling::LaunchConfiguration",
             "Properties" : {
-                "KeyName" : { "Fn::FindInMap" : [ "AWSSSHKeys", "default", "key" ]},
+                "KeyName" : { "Ref": "KeyName" },
                 "ImageId": {
                     "Fn::FindInMap": [
-                        "AMIMappingGenericInstance",
+                        "AMIMappingUbuntu1404Community",
                         {
                             "Ref": "AWS::Region"
                         },
@@ -1326,55 +1408,43 @@
                 "InstanceType" : {"Ref":"InstanceType"},
                 "UserData" : { "Fn::Base64" : { "Fn::Join" : ["",[
                     "#!/bin/bash -ex","\n",
-                    "apt-get install -y update","\n",
+                    "apt-get -y update","\n",
+                    "apt-get install -y git","\n",
+
                     // Install chef/solo client
                     "curl -L https://www.opscode.com/chef/install.sh | sudo bash","\n",
                     // Get chef repository
-                    "git clone https://github.com/sekka1/temp-gh.git /tmp/temp-gh","\n",
+                    "cd /tmp; git clone https://github.com/sekka1/gar-chef.git","\n",
                     // Run chef solo to provision itself.  The docker-base-server.json file will hold the run-list.
-                    "chef-solo -c /tmp/temp-gh/aws-configs/chef-solo/solo.rb -j /tmp/temp-gh/solo-run_lists/docker-base-server.json","\n",
+                    "chef-solo -c /tmp/gar-chef/aws-configs/chef-solo/solo.rb -j /tmp/gar-chef/solo-run_lists/docker-base-server.json","\n",
 
                     // Pull garland/aws-rest-api-server docker image and run it
                     "docker pull garland/aws-rest-api-server","\n",
-                    "docker run -p 8080:8080 garland/aws-rest-api-server","\n",
+                    "docker run -p 8080:8080 garland/aws-rest-api-server","\n"
 
                     // Pull BIP container here and run it
 
 
                     // http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-waitcondition-article.html
-                    "curl -X PUT -H 'Content-Type:' --data-binary '{\"Status\" : \"SUCCESS\",",
-                    "\"Reason\" : \"The application myapp is ready\",",
-                    "\"UniqueId\" : \"myapp\",",
-                    "\"Data\" : \"Done\"}' ",
-                    "\"", {"Ref" : "WaitForInstanceWaitHandle"},"\"\n"
+                    //"curl -X PUT -H 'Content-Type:' --data-binary '{\"Status\" : \"SUCCESS\",",
+                    //"\"Reason\" : \"The application myapp is ready\",",
+                    //"\"UniqueId\" : \"myapp\",",
+                    //"\"Data\" : \"Done\"}' ",
+                    //"\"", {"Ref" : "WaitForInstanceWaitHandle"},"\"\n"
                     ]
                 ]}
                 }
             }
         },
 
-        "WaitForInstanceWaitHandle" : {
-            "Type" : "AWS::CloudFormation::WaitConditionHandle",
-            "Properties" : {
-            }
-        },
-        "WaitForInstance" : {
-            "Type" : "AWS::CloudFormation::WaitCondition",
-            "DependsOn" : "LaunchConfigBIPPipeline",
-            "Properties" : {
-                "Handle" : {"Ref" : "WaitForInstanceWaitHandle"},
-                "Timeout" : "600"
-            }
-        },
         "AutoScalingGroupBIPPipeline" : {
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                //"AvailabilityZones" : { "Fn::GetAZs" : { "Ref" : "AWSRegion" } },
-                "AvailabilityZones" : [ "us-west-2a", "us-west-2b", "us-west-2c" ],
+                "AvailabilityZones" : { "Fn::GetAZs" : { "Ref" : "AWSRegion" } },
                 "LaunchConfigurationName" : { "Ref" : "LaunchConfigBIPPipeline" },
                 "MinSize" : "1",
                 "MaxSize" : "1",
-                "VPCZoneIdentifier" : [ { "Ref" : "SubnetWorker1a" } ],
+                "VPCZoneIdentifier" : [ { "Ref" : "SubnetWorkerNet1" }, { "Ref" : "SubnetWorkerNet2" }, { "Ref" : "SubnetWorkerNet3" } ],
                 "Tags" : [
                     { "Key" : "Network", "Value" : "Private", "PropagateAtLaunch" : "true" },
                     { "Key" : "EnvironmentName", "Value" : {"Ref": "AppEnvironmentName"}, "PropagateAtLaunch" : "true" }

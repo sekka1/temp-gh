@@ -77,6 +77,124 @@
             "Default": "10.11",
             "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})",
             "ConstraintDescription": "Must be a valid network address for a /16. Example: 10.11"
+        },
+        "DBName": {
+            "Default": "my_db",
+            "Description": "The database name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": ".*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBUsername": {
+            "Default": "myuser",
+            "Description": "The database admin account username",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "16",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBPassword": {
+            "Default": "123password123",
+            "Description": "The database admin account password",
+            "Type": "String",
+            "MinLength": "8",
+            "MaxLength": "41",
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "ConstraintDescription": "must contain only alphanumeric characters."
+        },
+        "DBPort": {
+            "Default": " 5432",
+            "Description": "The database tcp port",
+            "Type": "String",
+            "MinLength": "4",
+            "MaxLength": "6",
+            "AllowedPattern": "[0-9]*",
+            "ConstraintDescription": "must contain only numeric characters."
+        },
+        "DBClass": {
+            "Default": "db.m1.small",
+            "Description": "Database instance class",
+            "Type": "String",
+            "AllowedValues": [
+                "db.m1.small",
+                "db.m1.large",
+                "db.m1.xlarge",
+                "db.m2.xlarge",
+                "db.m2.2xlarge",
+                "db.m2.4xlarge"
+            ],
+            "ConstraintDescription": "must select a valid database instance type."
+        },
+        "DBVersion": {
+            "Default": "9.3.3",
+            "Description": "Database version of Postgres.",
+            "Type": "String",
+            "AllowedValues": [
+                "9.3.3",
+                "9.3.2",
+                "9.3.1"
+            ],
+            "ConstraintDescription": "must select a valid database version."
+        },
+        "DBAllocatedStorage": {
+            "Default": "400",
+            "Description": "The size of the database (Gb)",
+            "Type": "Number",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription": "must be between 5 and 1024Gb."
+        },
+        "ConditionCreateReadReplica": {
+            "Default": "false",
+            "Description": "Create a read replica of the db or not",
+            "Type": "String",
+            "AllowedValues": [
+                "true",
+                "false"
+            ],
+            "ConstraintDescription": "Must either select true|false."
+        },
+        "AvailabilityZone1": {
+            "Description": "Availability zone id: a, b, c, d, etc",
+            "Type": "String",
+            "Default": "a",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ],
+            "ConstraintDescription": "must be a availability zone."
+        },
+        "AvailabilityZone2": {
+            "Description": "Availability zone id: a, b, c, d, etc",
+            "Type": "String",
+            "Default": "b",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ],
+            "ConstraintDescription": "must be a availability zone."
+        },
+        "AvailabilityZone3": {
+            "Description": "Availability zone id: a, b, c, d, etc",
+            "Type": "String",
+            "Default": "c",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ],
+            "ConstraintDescription": "must be a availability zone."
         }
     },
     "Mappings": {
@@ -84,13 +202,13 @@
             "NetworkVPC": {
                 "CIDR": ".0.0/16"
             },
-            "SubnetPublic1a": {
+            "SubnetPublicNet1": {
                 "CIDR": ".11.0/24"
             },
-            "SubnetPublic1b": {
+            "SubnetPublicNet2": {
                 "CIDR": ".12.0/24"
             },
-            "SubnetPublic1c": {
+            "SubnetPublicNet3": {
                 "CIDR": ".13.0/24"
             },
             "SubnetPublic1d": {
@@ -108,32 +226,32 @@
             "SubnetDirector1d": {
                 "CIDR": ".24.0/24"
             },
-            "SubnetWorker1a": {
+            "SubnetWorkerNet1": {
                 "CIDR": ".31.0/24"
             },
-            "SubnetWorker1b": {
+            "SubnetWorkerNet2": {
                 "CIDR": ".32.0/24"
             },
-            "SubnetWorker1c": {
+            "SubnetWorkerNet3": {
                 "CIDR": ".33.0/24"
             },
             "SubnetWorker1d": {
                 "CIDR": ".34.0/24"
             },
-            "SubnetDatabase1a": {
+            "SubnetDatabaseNet1": {
                 "CIDR": ".41.0/24"
             },
-            "SubnetDatabase1b": {
+            "SubnetDatabaseNet2": {
                 "CIDR": ".42.0/24"
             },
-            "SubnetDatabase1c": {
+            "SubnetDatabaseNet3": {
                 "CIDR": ".43.0/24"
             },
             "SubnetDatabase1d": {
                 "CIDR": ".44.0/24"
             }
         },
-        "AMIMappingGenericInstance": {
+        "AMIMappingUbuntu1204": {
             "us-east-1": {
                 "AMI": "ami-fd20ad94"
             },
@@ -159,6 +277,58 @@
                 "AMI": "ami-dcfa4edd"
             }
         },
+        "AMIMappingUbuntu1404MarketPlace": {
+            "us-east-1": {
+                "AMI": "ami-30519058"
+            },
+            "us-west-1": {
+                "AMI": "ami-957070d0"
+            },
+            "us-west-2": {
+                "AMI": "ami-5b58266b"
+            },
+            "eu-west-1": {
+                "AMI": "ami-3986524e"
+            },
+            "sa-east-1": {
+                "AMI": "ami-1189270c"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-dad68888"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-eb6d0ad1"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-cb4610ca"
+            }
+        },
+        "AMIMappingUbuntu1404Community": {
+            "us-east-1": {
+                "AMI": "ami-e84d8480"
+            },
+            "us-west-1": {
+                "AMI": "ami-f1fdfeb4"
+            },
+            "us-west-2": {
+                "AMI": "ami-8bb8c0bb"
+            },
+            "eu-west-1": {
+                "AMI": "ami-"
+            },
+            "sa-east-1": {
+                "AMI": "ami-"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-"
+            }
+        },
         "AMIMappingNATInstance": {
             "us-east-1": {
                 "AMI": "ami-ad227cc4"
@@ -166,11 +336,16 @@
             "us-west-2": {
                 "AMI": "ami-f032acc0"
             }
-        },
-        "AWSSSHKeys": {
-            "default": {
-                "key": "gkan"
-            }
+        }
+    },
+    "Conditions": {
+        "ConditionDoCreateReadReplica": {
+            "Fn::Equals": [
+                {
+                    "Ref": "ConditionCreateReadReplica"
+                },
+                "true"
+            ]
         }
     },
     "Resources": {
@@ -400,7 +575,7 @@
                 ]
             }
         },
-        "SubnetPublic1a": {
+        "SubnetPublicNet1": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone": {
@@ -410,7 +585,9 @@
                             {
                                 "Ref": "AWSRegion"
                             },
-                            "e"
+                            {
+                                "Ref": "AvailabilityZone1"
+                            }
                         ]
                     ]
                 },
@@ -427,7 +604,7 @@
                             {
                                 "Fn::FindInMap": [
                                     "SubnetConfig",
-                                    "SubnetPublic1a",
+                                    "SubnetPublicNet1",
                                     "CIDR"
                                 ]
                             }
@@ -448,29 +625,29 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetPublic1a": {
+        "SubnetRouteTableAssociationSubnetPublicNet1": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePublic"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetPublic1a": {
+        "SubnetNetworkAclAssociationSubnetPublicNet1": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        "SubnetPublic1c": {
+        "SubnetPublicNet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone": {
@@ -480,7 +657,9 @@
                             {
                                 "Ref": "AWSRegion"
                             },
-                            "c"
+                            {
+                                "Ref": "AvailabilityZone2"
+                            }
                         ]
                     ]
                 },
@@ -497,7 +676,7 @@
                             {
                                 "Fn::FindInMap": [
                                     "SubnetConfig",
-                                    "SubnetPublic1c",
+                                    "SubnetPublicNet2",
                                     "CIDR"
                                 ]
                             }
@@ -518,29 +697,29 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetPublic1c": {
+        "SubnetRouteTableAssociationSubnetPublicNet2": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1c"
+                    "Ref": "SubnetPublicNet2"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePublic"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetPublic1c": {
+        "SubnetNetworkAclAssociationSubnetPublicNet2": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetPublic1c"
+                    "Ref": "SubnetPublicNet2"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        "SubnetWorker1a": {
+        "SubnetPublicNet3": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone": {
@@ -550,7 +729,9 @@
                             {
                                 "Ref": "AWSRegion"
                             },
-                            "e"
+                            {
+                                "Ref": "AvailabilityZone3"
+                            }
                         ]
                     ]
                 },
@@ -567,7 +748,79 @@
                             {
                                 "Fn::FindInMap": [
                                     "SubnetConfig",
-                                    "SubnetWorker1a",
+                                    "SubnetPublicNet3",
+                                    "CIDR"
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "elb nat"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPublicNet3": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublicNet3"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePublic"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetPublicNet3": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetPublicNet3"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        "SubnetWorkerNet1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWSRegion"
+                            },
+                            {
+                                "Ref": "AvailabilityZone1"
+                            }
+                        ]
+                    ]
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "VPCNetwork"
+                            },
+                            {
+                                "Fn::FindInMap": [
+                                    "SubnetConfig",
+                                    "SubnetWorkerNet1",
                                     "CIDR"
                                 ]
                             }
@@ -588,29 +841,29 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetWorker1a": {
+        "SubnetRouteTableAssociationSubnetWorkerNet1": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1a"
+                    "Ref": "SubnetWorkerNet1"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetWorker1a": {
+        "SubnetNetworkAclAssociationSubnetWorkerNet1": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1a"
+                    "Ref": "SubnetWorkerNet1"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        "SubnetWorker1c": {
+        "SubnetWorkerNet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone": {
@@ -620,7 +873,9 @@
                             {
                                 "Ref": "AWSRegion"
                             },
-                            "c"
+                            {
+                                "Ref": "AvailabilityZone2"
+                            }
                         ]
                     ]
                 },
@@ -637,7 +892,7 @@
                             {
                                 "Fn::FindInMap": [
                                     "SubnetConfig",
-                                    "SubnetWorker1c",
+                                    "SubnetWorkerNet2",
                                     "CIDR"
                                 ]
                             }
@@ -658,29 +913,29 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetWorker1c": {
+        "SubnetRouteTableAssociationSubnetWorkerNet2": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1c"
+                    "Ref": "SubnetWorkerNet2"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetWorker1c": {
+        "SubnetNetworkAclAssociationSubnetWorkerNet2": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetWorker1c"
+                    "Ref": "SubnetWorkerNet2"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        "SubnetDatabase1a": {
+        "SubnetWorkerNet3": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone": {
@@ -690,7 +945,9 @@
                             {
                                 "Ref": "AWSRegion"
                             },
-                            "e"
+                            {
+                                "Ref": "AvailabilityZone3"
+                            }
                         ]
                     ]
                 },
@@ -707,7 +964,79 @@
                             {
                                 "Fn::FindInMap": [
                                     "SubnetConfig",
-                                    "SubnetDatabase1a",
+                                    "SubnetWorkerNet3",
+                                    "CIDR"
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Worker Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetWorkerNet3": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorkerNet3"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetWorkerNet3": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetWorkerNet3"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        "SubnetDatabaseNet1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWSRegion"
+                            },
+                            {
+                                "Ref": "AvailabilityZone1"
+                            }
+                        ]
+                    ]
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "VPCNetwork"
+                            },
+                            {
+                                "Fn::FindInMap": [
+                                    "SubnetConfig",
+                                    "SubnetDatabaseNet1",
                                     "CIDR"
                                 ]
                             }
@@ -728,29 +1057,29 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetDatabase1a": {
+        "SubnetRouteTableAssociationSubnetDatabaseNet1": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1a"
+                    "Ref": "SubnetDatabaseNet1"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetDatabase1a": {
+        "SubnetNetworkAclAssociationSubnetDatabaseNet1": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1a"
+                    "Ref": "SubnetDatabaseNet1"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
             }
         },
-        "SubnetDatabase1c": {
+        "SubnetDatabaseNet2": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "AvailabilityZone": {
@@ -760,7 +1089,9 @@
                             {
                                 "Ref": "AWSRegion"
                             },
-                            "c"
+                            {
+                                "Ref": "AvailabilityZone2"
+                            }
                         ]
                     ]
                 },
@@ -777,7 +1108,7 @@
                             {
                                 "Fn::FindInMap": [
                                     "SubnetConfig",
-                                    "SubnetDatabase1c",
+                                    "SubnetDatabaseNet2",
                                     "CIDR"
                                 ]
                             }
@@ -798,26 +1129,211 @@
                 ]
             }
         },
-        "SubnetRouteTableAssociationSubnetDatabase1c": {
+        "SubnetRouteTableAssociationSubnetDatabaseNet2": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1c"
+                    "Ref": "SubnetDatabaseNet2"
                 },
                 "RouteTableId": {
                     "Ref": "RouteTablePrivate"
                 }
             }
         },
-        "SubnetNetworkAclAssociationSubnetDatabase1c": {
+        "SubnetNetworkAclAssociationSubnetDatabaseNet2": {
             "Type": "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "SubnetDatabase1c"
+                    "Ref": "SubnetDatabaseNet2"
                 },
                 "NetworkAclId": {
                     "Ref": "NetworkAcl"
                 }
+            }
+        },
+        "SubnetDatabaseNet3": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWSRegion"
+                            },
+                            {
+                                "Ref": "AvailabilityZone3"
+                            }
+                        ]
+                    ]
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "VPCNetwork"
+                            },
+                            {
+                                "Fn::FindInMap": [
+                                    "SubnetConfig",
+                                    "SubnetDatabaseNet3",
+                                    "CIDR"
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackId"
+                        }
+                    },
+                    {
+                        "Key": "functionality",
+                        "Value": "Database Layer"
+                    }
+                ]
+            }
+        },
+        "SubnetRouteTableAssociationSubnetDatabaseNet3": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabaseNet3"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTablePrivate"
+                }
+            }
+        },
+        "SubnetNetworkAclAssociationSubnetDatabaseNet3": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetDatabaseNet3"
+                },
+                "NetworkAclId": {
+                    "Ref": "NetworkAcl"
+                }
+            }
+        },
+        "DBSubnetGroupMainDB": {
+            "Type": "AWS::RDS::DBSubnetGroup",
+            "Properties": {
+                "DBSubnetGroupDescription": "Subnets available for the RDS DB Instance",
+                "SubnetIds": [
+                    {
+                        "Ref": "SubnetDatabaseNet1"
+                    },
+                    {
+                        "Ref": "SubnetDatabaseNet3"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Functionality",
+                        "Value": "VPC Subnet Group"
+                    }
+                ]
+            }
+        },
+        "DBSecurityGroupMainDB": {
+            "Type": "AWS::RDS::DBSecurityGroup",
+            "Properties": {
+                "EC2VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupDescription": "Ingress for main RDS DB.  Allowing all for now, but this should be changed.",
+                "DBSecurityGroupIngress": [
+                    {
+                        "CIDRIP": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Functionality",
+                        "Value": "Main DB RDS Security Group"
+                    }
+                ]
+            }
+        },
+        "DBInstanceMainDB": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "DBName": {
+                    "Ref": "DBName"
+                },
+                "AllocatedStorage": {
+                    "Ref": "DBAllocatedStorage"
+                },
+                "DBInstanceClass": {
+                    "Ref": "DBClass"
+                },
+                "Engine": "postgres",
+                "EngineVersion": {
+                    "Ref": "DBVersion"
+                },
+                "MasterUsername": {
+                    "Ref": "DBUsername"
+                },
+                "MasterUserPassword": {
+                    "Ref": "DBPassword"
+                },
+                "Port": {
+                    "Ref": "DBPort"
+                },
+                "DBSubnetGroupName": {
+                    "Ref": "DBSubnetGroupMainDB"
+                },
+                "DBSecurityGroups": [
+                    {
+                        "Ref": "DBSecurityGroupMainDB"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Role",
+                        "Value": "Primary"
+                    },
+                    {
+                        "Key": "Functionality",
+                        "Value": "Main DB"
+                    },
+                    {
+                        "Key": "environmentName",
+                        "Value": {
+                            "Ref": "AppEnvironmentName"
+                        }
+                    }
+                ]
+            }
+        },
+        "DBInstanceMainDBReplica1": {
+            "Type": "AWS::RDS::DBInstance",
+            "Condition": "ConditionDoCreateReadReplica",
+            "Properties": {
+                "SourceDBInstanceIdentifier": {
+                    "Ref": "DBInstanceMainDB"
+                },
+                "Port": {
+                    "Ref": "DBPort"
+                },
+                "Tags": [
+                    {
+                        "Key": "Role",
+                        "Value": "ReadRep"
+                    },
+                    {
+                        "Key": "Functionality",
+                        "Value": "Main DB"
+                    }
+                ]
             }
         },
         "EC2InstanceNAT1a": {
@@ -836,14 +1352,10 @@
                     "Ref": "InstanceType"
                 },
                 "KeyName": {
-                    "Fn::FindInMap": [
-                        "AWSSSHKeys",
-                        "default",
-                        "key"
-                    ]
+                    "Ref": "KeyName"
                 },
                 "SubnetId": {
-                    "Ref": "SubnetPublic1a"
+                    "Ref": "SubnetPublicNet1"
                 },
                 "SecurityGroupIds": [
                     {
@@ -877,6 +1389,170 @@
                 "InstanceId": {
                     "Ref": "EC2InstanceNAT1a"
                 }
+            }
+        },
+        "LaunchConfigBIPPipeline": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AMIMappingUbuntu1404Community",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroupDefaultGeneric"
+                    }
+                ],
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex",
+                                "\n",
+                                "apt-get -y update",
+                                "\n",
+                                "apt-get install -y git",
+                                "\n",
+                                "curl -L https://www.opscode.com/chef/install.sh | sudo bash",
+                                "\n",
+                                "cd /tmp; git clone https://github.com/sekka1/gar-chef.git",
+                                "\n",
+                                "chef-solo -c /tmp/gar-chef/aws-configs/chef-solo/solo.rb -j /tmp/gar-chef/solo-run_lists/docker-base-server.json",
+                                "\n",
+                                "docker pull garland/aws-rest-api-server",
+                                "\n",
+                                "docker run -p 8080:8080 garland/aws-rest-api-server",
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "AutoScalingGroupBIPPipeline": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::GetAZs": {
+                        "Ref": "AWSRegion"
+                    }
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfigBIPPipeline"
+                },
+                "MinSize": "1",
+                "MaxSize": "1",
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "SubnetWorkerNet1"
+                    },
+                    {
+                        "Ref": "SubnetWorkerNet2"
+                    },
+                    {
+                        "Ref": "SubnetWorkerNet3"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Network",
+                        "Value": "Private",
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "EnvironmentName",
+                        "Value": {
+                            "Ref": "AppEnvironmentName"
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            }
+        },
+        "ScalingPolicyUpBIPPipeline": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "AutoScalingGroupBIPPipeline"
+                },
+                "Cooldown": "60",
+                "ScalingAdjustment": "1"
+            }
+        },
+        "ScalingPolicyDownBIPPipeline": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "AutoScalingGroupBIPPipeline"
+                },
+                "Cooldown": "60",
+                "ScalingAdjustment": "-1"
+            }
+        },
+        "CPUAlarmHighBIPPipeline": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-up if CPU > 90% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "90",
+                "AlarmActions": [
+                    {
+                        "Ref": "ScalingPolicyUpBIPPipeline"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "AutoScalingGroupBIPPipeline"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "CPUAlarmLowBIPPipeline": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-down if CPU < 70% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "70",
+                "AlarmActions": [
+                    {
+                        "Ref": "ScalingPolicyDownBIPPipeline"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "AutoScalingGroupBIPPipeline"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "LessThanThreshold"
             }
         }
     },
