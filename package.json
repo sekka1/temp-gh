@@ -1,0 +1,12 @@
+{
+    "name": "Worker1",
+    "private": true,
+    "version": "0.0.1",
+    "description": "A worker",
+    "author": "Garland Kan <garlandk@gmail.com>",
+    "dependencies": {
+        "shelljs": "0.2.6",
+        "aws-sdk": "2.0.0-rc9",
+        "async": ">=0.7.0"
+    }
+}
