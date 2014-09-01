@@ -3,18 +3,20 @@
  *
  *
  */
-//var shelljs = require('shelljs');
 var async = require('async');
 
-var lockFile = require('libs/lockFile.js');
-var mq = require('libs/queue.js');
-//var s3Sync = require('libs/s3Sync.js');
+var lockFile = require('./libs/lockFile.js');
+var mq = require('./libs/queue.js');
+var s3cmd = require('./libs/s3cmdDockerAPI.js');
+
+// Set AWS Keys for S3
+s3cmd.setAWSKeys('key', 'secret');
 
 /**
  * Interval to run
  *
  */
-var monitor_interval = 6000;
+var monitor_interval = 600;
 var intervalRunTests;
 
 intervalRunTests = setInterval(function(){
@@ -25,6 +27,8 @@ intervalRunTests = setInterval(function(){
         // No job currently running
 
         mqContent = mq.poll();
+
+        console.log(mqContent);
 
         if(mqContent !== null){
             // Found a job in the queue
