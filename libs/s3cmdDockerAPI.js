@@ -14,22 +14,74 @@ exports.setAWSKeys = function(user_key, user_secret){
     secret = user_secret;
 };
 
-exports.syncLocalToS3 = function(){
+/**
+ * s3cmd sync files from a local directory to a S3 bucket
+ *
+ * localDir = /local/directory/
+ * s3Dir = s3://destination.bucket/
+ *
+ * @param localDir
+ * @param s3Dir
+ * @param callback
+ */
+exports.syncLocalToS3 = function(localDir, s3Dir, callback){
 
-    var command = 'docker run --env aws_key='+key+' --env aws_secret='+secret+' --env cmd=sync-local-to-s3 --env DEST_S3=s3://destination.bucket/  -v /local/directory/:/opt/src -d garland/s3cmd-container';
+    var command = 'docker run --env aws_key='+key+' --env aws_secret='+secret+' --env cmd=sync-local-to-s3 --env DEST_S3='+s3Dir+'  -v '+localDir+':/opt/src garland/docker-s3cmd';
 
-    shelljs.exec(command, function(code, output) {
+    shelljs.exec(command, {silent:true}, function(code, output) {
         console.log('Exit code:', code);
         console.log('Program output:', output);
+
+        if(code !== 0)
+            callback(true, null);
+        else
+            callback(null, true);
     });
 };
 
-exports.syncS3ToLocal = function(){
+/**
+ * s3cmd sync files from S3 bucket to a local directory
+ *
+ * localDir = /local/directory/
+ * s3Dir = s3://destination.bucket/
+ *
+ * @param localDir
+ * @param s3Dir
+ * @param callback
+ */
+exports.syncS3ToLocal = function(localDir, s3Dir, callback){
 
-    var command = 'docker run --env aws_key='+key+' --env aws_secret='+secret+' --env cmd=sync-s3-to-local --env SRC_S3=s3://source.bucket/ -v /local/direcoty/:/opt/dest garland/s3cmd-container';
+    var command = 'docker run --env aws_key='+key+' --env aws_secret='+secret+' --env cmd=sync-s3-to-local --env SRC_S3='+s3Dir+'  -v '+localDir+':/opt/dest garland/docker-s3cmd';
 
-    shelljs.exec(command, function(code, output) {
+    console.log(command);
+
+    shelljs.exec(command, {silent:true}, function(code, output) {
         console.log('Exit code:', code);
         console.log('Program output:', output);
+
+        if(code !== 0)
+            callback(true, null);
+        else
+            callback(null, true);
+    });
+};
+
+/**
+ * Checks if there is a Docker server installed locally
+ */
+exports.isThereALocalDockerServer = function(callback){
+
+    var command = 'docker version';
+
+    shelljs.exec(command, {silent:true}, function(code, output) {
+        //console.log('Exit code:', code);
+        //console.log('Program output:', output);
+
+        var pattern = new RegExp("Server version");
+
+        if(code !== 0)
+            callback(true, null);
+        else
+            callback(null, pattern.test(output));
     });
 };

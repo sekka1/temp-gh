@@ -46,33 +46,44 @@ intervalRunTests = setInterval(function(){
 
                         //s3Sync.getData('path to get here the mqContent probably should hold this info');
 
-                        callback(null, 'two');
+                        s3cmd.syncS3ToLocal('localDir', 's3Dir', function(err, result){
+
+                            if(err){
+                                // Error happened
+                            }else{
+                                // process successful result
+                                callback(null, 'two');
+                            }
+                        });
                     },
                     function(callback){
                         // 3) run BIP pipeline
 
 
 
-                        callback(null, 'one');
+                        callback(null, 'three');
                     },
                     function(callback){
                         // 4) put results to S3
 
+                        s3cmd.syncLocalToS3('localDir', 's3Dir', function(err, result){
 
-
-                        callback(null, 'one');
+                            if(err){
+                                // Error happened
+                            }else{
+                                // process successful result
+                                callback(null, 'four');
+                            }
+                        });
                     },
                     function(callback){
                         // 5) delete lock file
 
-
-
-                        callback(null, 'one');
+                        lockFile.delete();
+                        callback(null, 'five');
                     },
                     function(callback){
                         // 6) Notify something that it is done
-
-
 
                         callback(null, 'one');
                     },
