@@ -7,6 +7,8 @@
 var https = require('https');
 var http = require('http');
 
+var host = 'localhost:8080';
+
 /**
  * Get one item from the queue
  *
@@ -46,6 +48,11 @@ exports.getOne = function(callback){
         });
     });
 
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+
+    });
+
     //req.send();
     req.end();
 
@@ -54,7 +61,7 @@ exports.getOne = function(callback){
 /**
  * Put an item into the queue
  */
-exports.putOne = function(messageObject){
+exports.putOne = function(messageObject, callback){
 
     var endpoint = '/sqs/sendMessage';
     var method = 'POST';
@@ -91,6 +98,11 @@ exports.putOne = function(messageObject){
             var responseObject = JSON.parse(responseString);
             //success(responseObject);
         });
+    });
+
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+
     });
 
     req.write(dataString);
